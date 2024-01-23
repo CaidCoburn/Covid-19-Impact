@@ -1,0 +1,195 @@
+#Setting seed so that my results are replicable.
+set.seed(1)
+#Downloading the necessary packages for my project.
+install.packages("readxl")
+install.packages("car")
+install.packages("moments")
+install.packages("lmtest")
+install.packages("tseries")
+install.packages("ggplot2")
+install.packages("patchwork")
+#Loading the packages for my project.
+library(readxl) #Package for loading data.
+library(car) #Package for performing an F-test.
+library(moments) #Package for testing skewness & Kirtosis.
+library(lmtest) #Package for performing data tests.
+library(tseries) #Package for performing adf test.
+library(ggplot2) #Package for enhancing graphs.
+library(patchwork) #Package for grouping graphs together.
+#Importing my data from excel.
+SoftwareData <- read_excel("SoftwareData.xlsx",
+col_types = c("date", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric"))
+
+#Omitting the 'NA' values in my data set.
+SoftwareData<-na.omit(SoftwareData)
+#
+#Obtaining data for descriptive statistics table.
+mean(SoftwareData$ERMRSF)
+sd(SoftwareData$ERMRSF)
+min(SoftwareData$ERMRSF)
+max(SoftwareData$ERMRSF)
+#
+mean(SoftwareData$ERORCL)
+sd(SoftwareData$ERORCL)
+min(SoftwareData$ERORCL)
+max(SoftwareData$ERORCL)
+#
+mean(SoftwareData$ERSAP)
+sd(SoftwareData$ERSAP)
+min(SoftwareData$ERSAP)
+max(SoftwareData$ERSAP)
+#
+mean(SoftwareData$ERSLFC)
+sd(SoftwareData$ERSLFC)
+min(SoftwareData$ERSLFC)
+max(SoftwareData$ERSLFC)
+#
+mean(SoftwareData$ERBRDC)
+sd(SoftwareData$ERBRDC)
+min(SoftwareData$ERBRDC)
+max(SoftwareData$ERBRDC)
+#
+#Plotting data for visual inspection...
+ggp1 <- ggplot(SoftwareData, aes(Date, ERMRSF,
+col= Window)) + geom_line() +
+ggtitle("Microsoft ER") + scale_colour_gradient(low = "red", high = "black") + theme(legend.position = "none")
+ggp1
+
+ggp2 <- ggplot(SoftwareData, aes(Date, ERORCL,
+col= Window)) + geom_line() +
+ggtitle("Oracle ER") + scale_colour_gradient(low = "blue", high = "black") + theme(legend.position = "none")
+ggp2
+
+ggp3 <- ggplot(SoftwareData, aes(Date, ERSAP,
+col= Window)) + geom_line() +
+ggtitle("SAP ER") + scale_colour_gradient(low = "green", high = "black") + theme(legend.position = "none")
+ggp3
+
+ggp4 <- ggplot(SoftwareData, aes(Date, ERSLFC,
+col= Window)) + geom_line() +
+ggtitle("Salesforce ER") + scale_colour_gradient(low = "pink", high = "black") + theme(legend.position = "none")
+ggp4
+
+ggp5 <- ggplot(SoftwareData, aes(Date, ERBRDC,
+col= Window)) + geom_line() +
+ggtitle("Broadcom ER") + scale_colour_gradient(low = "orange", high = "black") + theme(legend.position = "none")
+ggp5
+#
+#Graphing all 5 plots together.
+ggp1+ggp2+ggp3+ggp4+ggp5
+#
+#Conducting the adf test to check if data is stationary.
+adf.test(SoftwareData$ERMRSF)
+adf.test(SoftwareData$ERORCL)
+adf.test(SoftwareData$ERSAP)
+adf.test(SoftwareData$ERSLFC)
+adf.test(SoftwareData$ERBRDC)
+#
+#Running the regressions for each company.
+regMicrosoft=lm(ERMRSF~MKT, data=SoftwareData)
+regOracle=lm(ERORCL~MKT, data=SoftwareData)
+regSAP=lm(ERSAP~MKT, data=SoftwareData)
+regSalesforce=lm(ERSLFC~MKT, data=SoftwareData)
+regBroadcom=lm(ERBRDC~MKT, data=SoftwareData)
+#
+#Running regressions during my Covid-19 window.
+regMicrosoftcovid=lm(ERMRSF~MKT+Window*MKT, data=SoftwareData)
+regOraclecovid=lm(ERORCL~MKT+Window*MKT, data=SoftwareData)
+regSAPcovid=lm(ERSAP~MKT+Window*MKT, data=SoftwareData)
+regSalesforcecovid=lm(ERSLFC~MKT+Window*MKT, data=SoftwareData)
+regBroadcomcovid=lm(ERBRDC~MKT+Window*MKT, data=SoftwareData)
+#
+#Inspecting the regressions
+summary(regMicrosoft)
+summary(regMicrosoftcovid)
+summary(regOracle)
+summary(regOraclecovid)
+summary(regSAP)
+summary(regSAPcovid)
+summary(regSalesforce)
+summary(regSalesforcecovid)
+summary(regBroadcom)
+summary(regBroadcomcovid)
+#Running F-tests to inspect the impact of Covid.
+linearHypothesis(regMicrosoftcovid, c("Window", "MKT:Window"))
+linearHypothesis(regOraclecovid, c("Window", "MKT:Window"))
+linearHypothesis(regSAPcovid, c("Window", "MKT:Window"))
+linearHypothesis(regSalesforcecovid, c("Window", "MKT:Window"))
+linearHypothesis(regBroadcomcovid, c("Window", "MKT:Window"))
+#
+#Creating new variable to plot errors.
+errorsMicrosoft=residuals(regMicrosoft)
+errorsOracle=residuals(regOracle)
+errorsSAP=residuals(regSAP)
+errorsSalesforce=residuals(regSalesforce)
+errorsBroadcom=residuals(regBroadcom)
+
+#Plotting the errors...
+ggp6 <- ggplot(SoftwareData, aes(x=errorsMicrosoft)) +
+geom_histogram(binwidth=0.5, col="red", fill="red", alpha=0.5) +ggtitle ("Microsoft")+xlab("Residual")
+ggp6
+
+ggp7 <- ggplot(SoftwareData, aes(x=errorsOracle)) +
+geom_histogram(binwidth=0.5, col="blue", fill="blue", alpha=0.5) +ggtitle ("Oracle") +xlab("Residual")
+ggp7
+
+ggp8 <- ggplot(SoftwareData, aes(x=errorsSAP)) +
+geom_histogram(binwidth=0.5, col="green", fill="green", alpha=0.5) +ggtitle ("SAP") +xlab("Residual")
+ggp8
+
+ggp9 <- ggplot(SoftwareData, aes(x=errorsSalesforce)) +
+geom_histogram(binwidth=0.5, col="pink", fill="pink", alpha=0.5) + ggtitle("Salesforce") +xlab("Residual")
+ggp9
+
+ggp10 <- ggplot(SoftwareData, aes(x=errorsBroadcom)) +
+geom_histogram(binwidth=0.5, col="orange", fill="orange", alpha=0.5) +ggtitle("Broadcom") +xlab("Residual")
+ggp10
+
+#Adding all plots to one graph.
+ggp6+ggp7+ggp8+ggp9+ggp10
+
+#Residual Statistics Data.
+skewness(errorsMicrosoft)
+kurtosis(errorsMicrosoft)
+mean(errorsMicrosoft)
+sd(errorsMicrosoft)
+#
+skewness(errorsOracle)
+kurtosis(errorsOracle)
+mean(errorsOracle)
+sd(errorsOracle)
+#
+skewness(errorsSAP)
+kurtosis(errorsSAP)
+mean(errorsSAP)
+sd(errorsSAP)
+#
+skewness(errorsSalesforce)
+kurtosis(errorsSalesforce)
+mean(errorsSalesforce)
+sd(errorsSalesforce)
+#
+skewness(errorsBroadcom)
+kurtosis(errorsBroadcom)
+mean(errorsBroadcom)
+sd(errorsBroadcom)
+#
+#Autocorrelation test
+durbinWatsonTest(errorsMicrosoft)
+durbinWatsonTest(errorsOracle)
+durbinWatsonTest(errorsSAP)
+durbinWatsonTest(errorsSalesforce)
+durbinWatsonTest(errorsBroadcom)
+#
+#Whites Test
+bptest(regMicrosoft, varformula = ~MKT, data = SoftwareData)
+bptest(regOracle, varformula = ~MKT, data = SoftwareData)
+bptest(regSAP, varformula = ~MKT, data = SoftwareData)
+bptest(regSalesforce, varformula = ~MKT, data = SoftwareData)
+bptest(regBroadcom, varformula = ~MKT, data = SoftwareData)
